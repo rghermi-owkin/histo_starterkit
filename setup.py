@@ -6,5 +6,5 @@ setup(
    description="Basic introduction to Histology.",
    author="Ridouane GHERMI",
    url="https://github.com/rghermi-owkin/histo_starterkit",
-   python_requires=">=3.8",
+   python_requires=">=3.7",
 )
