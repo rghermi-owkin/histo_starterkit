@@ -28,6 +28,7 @@ class MeanPool(torch.nn.Module):
         bias: bool = True,
     ):
         super(MeanPool, self).__init__()
+        
         self.mlp = MLP(
             in_features=in_features,
             out_features=out_features,
@@ -36,6 +37,15 @@ class MeanPool(torch.nn.Module):
             activation=activation,
             bias=bias,
         )
+        self.mlp.apply(self.weight_initialization)
+    
+    @staticmethod
+    def weight_initialization(module: torch.nn.Module):
+        if isinstance(module, torch.nn.Linear):
+            torch.nn.init.xavier_uniform_(module.weight)
+
+            if module.bias is not None:
+                module.bias.data.fill_(0.0)
 
     def forward(
         self, x: torch.Tensor, mask: Optional[torch.BoolTensor] = None):

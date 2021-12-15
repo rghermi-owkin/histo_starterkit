@@ -8,6 +8,8 @@ from tqdm import tqdm
 import torch
 from sklearn.metrics import roc_auc_score
 
+import mlflow
+
 
 # Training and validation
 
@@ -23,7 +25,7 @@ def train_step(
 
     train_loss = []
     all_preds, all_labels = [], []
-    for i, batch in enumerate(dataloader):
+    for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
         # Get data
         features, mask, labels = batch
 
@@ -64,7 +66,7 @@ def eval_step(
     valid_loss = []
     all_preds, all_labels = [], []
     with torch.no_grad():
-        for i, batch in enumerate(dataloader):
+        for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
             # Get data
             features, mask, labels = batch
 
@@ -98,7 +100,7 @@ def predict(
 
     all_preds, all_labels = [], []
     with torch.no_grad():
-        for i, batch in enumerate(dataloader):
+        for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
             # Get data
             features, mask, labels = batch
 
@@ -153,16 +155,23 @@ def fit(
         except ValueError:
             valid_metric = -1
         
-
         # Save logs
         train_losses.append(train_loss)
         valid_losses.append(valid_loss)
         train_metrics.append(train_metric)
         valid_metrics.append(valid_metric)
+
+        logs = {
+            'train_loss':train_loss,
+            'valid_loss':valid_loss,
+            'train_metric':train_metric,
+            'valid_metric':valid_metric,
+        }
+        mlflow.log_metrics(logs, step=epoch)
         
         if verbose:
             print('Epoch:', epoch+1)
             print('Train loss:', train_loss, '; Valid loss:', valid_loss)
             print('Train metric:', train_metric, '; Valid metric:', valid_metric)
         
-    return model, train_losses, valid_losses, train_metrics, valid_metrics
+    return train_losses, valid_losses, train_metrics, valid_metrics

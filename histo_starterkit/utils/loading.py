@@ -11,8 +11,6 @@ from torch.nn import BCEWithLogitsLoss
 
 from histo_starterkit.constants import MASK_PATH, FEATURES_PATH
 from histo_starterkit.constants import METADATA_PATH
-from histo_starterkit.models import MeanPool, MaxPool
-from classic_algos.nn import Chowder, DeepMIL
 
 
 # Loading and saving
@@ -80,25 +78,6 @@ def save_metadata(slide_name: str, metadata):
     filename = '.'.join([slide_name, 'pkl'])
     filepath = os.path.join(METADATA_PATH, filename)
     save_pickle(filepath, metadata)
-
-def get_model(
-    model_name: str, 
-    in_features: int = 2048, 
-    out_features: int = 1
-    ):
-    if model_name == 'MeanPool':
-        return MeanPool(in_features=in_features, out_features=out_features)
-    elif model_name == 'MaxPool':
-        return MaxPool(in_features=in_features, out_features=out_features)
-    elif model_name == 'Chowder':
-        return Chowder(
-            in_features=in_features, 
-            out_features=out_features, 
-            n_top=10, 
-            n_bottom=10,
-        )
-    elif model_name == 'DeepMIL':
-        return DeepMIL(in_features=in_features, out_features=out_features)
     
 def get_loss(loss_name: str):
     if loss_name == 'BCEWithLogitsLoss':

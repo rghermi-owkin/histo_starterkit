@@ -1,0 +1,15 @@
+artifact_uri: /home/rghermi/histo_starterkit/mlruns/1/55af551a3da1409ca57de0bf9bc22aa0/artifacts
+end_time: 1639527807672
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: deleted
+name: ''
+run_id: 55af551a3da1409ca57de0bf9bc22aa0
+run_uuid: 55af551a3da1409ca57de0bf9bc22aa0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1639527791212
+status: 4
+tags: []
+user_id: rghermi

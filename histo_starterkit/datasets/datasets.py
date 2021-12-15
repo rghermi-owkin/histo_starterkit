@@ -33,13 +33,10 @@ class SlideFeaturesDataset(Dataset):
         ## need to handle inference time (fixed sampling? ensemble?)
         
         # Padding
-        mask = np.zeros((self.max_tiles, 1), dtype=bool)
+        mask = np.zeros((self.max_tiles, 1))
         if len(features) < self.max_tiles:
-            tmp = np.zeros((self.max_tiles, self.feature_dim))
-            tmp[:len(features), :] = features
-            features = tmp
-            mask[len(features):, :] = np.ones((self.max_tiles-len(features), 1), dtype=bool)
-        ## need to return padding indices, useful for the following
+            mask[len(features):][:] = np.ones((self.max_tiles-len(features), 1))
+            features = np.pad(features, ((0, self.max_tiles-len(features)), (0, 0)), 'constant', constant_values=0)
         
         # Convert to Tensor
         features = torch.from_numpy(features.astype(np.float32))
