@@ -4,11 +4,28 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-
-import torch
 from sklearn.metrics import roc_auc_score
+from lifelines.utils import concordance_index
+import torch
 
 import mlflow
+
+
+# Metrics
+
+def sigmoid(z):
+    return 1. / (1. + np.exp(-z))
+
+def compute_metric(labels, preds, metric_name='auc'):
+    if metric_name == 'auc':
+        preds = sigmoid(preds)
+        try:
+            return roc_auc_score(labels, preds)
+        except:
+            return -1
+    elif metric_name == 'cindex':
+        times, events = np.abs(labels), 1 * (labels > 0)
+        return concordance_index(times, -preds, events)
 
 
 # Training and validation
@@ -25,7 +42,8 @@ def train_step(
 
     train_loss = []
     all_preds, all_labels = [], []
-    for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+    #for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+    for i, batch in enumerate(dataloader):
         # Get data
         features, mask, labels = batch
 
@@ -36,7 +54,8 @@ def train_step(
 
         # Compute outputs and loss
         outputs, _ = model(features, mask)
-        preds = torch.sigmoid(outputs)
+        #preds = torch.sigmoid(outputs)
+        preds = outputs
         loss = criterion(outputs, labels)
 
         # Run backprop
@@ -66,7 +85,8 @@ def eval_step(
     valid_loss = []
     all_preds, all_labels = [], []
     with torch.no_grad():
-        for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+        #for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+        for i, batch in enumerate(dataloader):
             # Get data
             features, mask, labels = batch
 
@@ -77,7 +97,8 @@ def eval_step(
 
             # Compute outputs and loss
             outputs, _ = model(features, mask)
-            preds = torch.sigmoid(outputs)
+            #preds = torch.sigmoid(outputs)
+            preds = outputs
             loss = criterion(outputs, labels)
 
             # Save logs
@@ -100,7 +121,8 @@ def predict(
 
     all_preds, all_labels = [], []
     with torch.no_grad():
-        for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+        #for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+        for i, batch in enumerate(dataloader):
             # Get data
             features, mask, labels = batch
 
@@ -111,7 +133,8 @@ def predict(
 
             # Compute outputs and loss
             outputs, _ = model(features, mask)
-            preds = torch.sigmoid(outputs)
+            #preds = torch.sigmoid(outputs)
+            preds = outputs
 
             # Save logs
             all_preds.append(preds.detach())
@@ -131,6 +154,7 @@ def fit(
     num_epochs: int,
     device: str,
     verbose: bool = True,
+    log_metrics: bool = True,
     ):
 
     train_losses, valid_losses = [], []
@@ -146,14 +170,9 @@ def fit(
         # Compute loss and metric
         train_loss = np.mean(tr_losses)
         valid_loss = np.mean(val_losses)
-        try:
-            train_metric = roc_auc_score(tr_labels, tr_preds)
-        except ValueError:
-            train_metric = -1
-        try:
-            valid_metric = roc_auc_score(val_labels, val_preds)
-        except ValueError:
-            valid_metric = -1
+
+        train_metric = compute_metric(tr_labels, tr_preds)
+        valid_metric = compute_metric(val_labels, val_preds)
         
         # Save logs
         train_losses.append(train_loss)
@@ -161,13 +180,14 @@ def fit(
         train_metrics.append(train_metric)
         valid_metrics.append(valid_metric)
 
-        logs = {
-            'train_loss':train_loss,
-            'valid_loss':valid_loss,
-            'train_metric':train_metric,
-            'valid_metric':valid_metric,
-        }
-        mlflow.log_metrics(logs, step=epoch)
+        if log_metrics:
+            logs = {
+                'train_loss':train_loss,
+                'valid_loss':valid_loss,
+                'train_metric':train_metric,
+                'valid_metric':valid_metric,
+            }
+            mlflow.log_metrics(logs, step=epoch)
         
         if verbose:
             print('Epoch:', epoch+1)
